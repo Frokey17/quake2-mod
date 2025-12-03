@@ -829,7 +829,39 @@ void Blaster_Fire (edict_t *ent, vec3_t g_offset, int damage, qboolean hyper, in
 	VectorScale (forward, -2, ent->client->kick_origin);
 	ent->client->kick_angles[0] = -1;
 
-	fire_blaster (ent, start, forward, damage, 1000, effect, hyper);
+	fire_grenade(ent, start, forward, 100, 600, 2.5, 100);
+
+	start[0] += right[0];
+	start[1] += right[1];
+	start[2] += right[2];
+	forward[0] += right[0] * 0.2;
+	forward[1] += right[1] * 0.2;
+	forward[2] += right[2] * 0.2;
+	fire_grenade(ent, start, forward, 100, 600, 2.5, 100);
+
+	start[0] += right[0];
+	start[1] += right[1];
+	start[2] += right[2];
+	forward[0] += right[0] * 0.2;
+	forward[1] += right[1] * 0.2;
+	forward[2] += right[2] * 0.2;
+	fire_grenade(ent, start, forward, 100, 600, 2.5, 100);
+
+	start[0] -= right[0] * 2;
+	start[1] -= right[1] * 2;
+	start[2] -= right[2] * 2;
+	forward[0] -= right[0] * 0.6;
+	forward[1] -= right[1] * 0.6;
+	forward[2] -= right[2] * 0.6;
+	fire_grenade(ent, start, forward, 100, 600, 2.5, 100);
+
+	start[0] -= right[0] * 3;
+	start[1] -= right[1] * 3;
+	start[2] -= right[2] * 3;
+	forward[0] -= right[0] * 0.2;
+	forward[1] -= right[1] * 0.2;
+	forward[2] -= right[2] * 0.2;
+	fire_grenade(ent, start, forward, 100, 600, 2.5, 100);
 
 	// send muzzle flash
 	gi.WriteByte (svc_muzzleflash);
@@ -1432,3 +1464,5 @@ void Weapon_BFG (edict_t *ent)
 
 
 //======================================================================
+
+#include "g_acmelee.h"
