@@ -48,7 +48,7 @@ void fire_sword(edict_t* self, vec3_t start, vec3_t aimdir, int damage, int kick
 		{
 			if (tr.ent->takedamage)
 			{
-				//This tells us to damage the thing that in our path...hehehehe
+				//This tells us to damage the thing that in our path...hehehehegit 
 				T_Damage(tr.ent, self, self, aimdir, tr.endpos, tr.plane.normal, damage, kick, 0, 1);
 			}
 			else
