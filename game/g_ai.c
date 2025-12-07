@@ -773,6 +773,14 @@ qboolean ai_checkattack (edict_t *self, float dist)
 	vec3_t		temp;
 	qboolean	hesDeadJim;
 
+	if (self->enemy && self->enemy->client && (self->enemy->flags & FL_NOTARGET))
+	{
+		self->enemy = NULL;
+		self->oldenemy = NULL;
+		self->monsterinfo.stand(self);
+		return false;
+	}
+
 // this causes monsters to run blindly to the combat point w/o firing
 	if (self->goalentity)
 	{

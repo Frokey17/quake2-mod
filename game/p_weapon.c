@@ -713,6 +713,7 @@ void weapon_grenadelauncher_fire (edict_t *ent)
 	vec3_t	start;
 	int		damage = 120;
 	float	radius;
+	edict_t* check;
 
 	radius = damage+40;
 	if (is_quad)
@@ -725,7 +726,31 @@ void weapon_grenadelauncher_fire (edict_t *ent)
 	VectorScale (forward, -2, ent->client->kick_origin);
 	ent->client->kick_angles[0] = -1;
 
-	fire_grenade (ent, start, forward, damage, 600, 2.5, radius);
+	fire_grenade (ent, start, forward, 0, 100, 0.3, 0);
+	fire_grenade(ent, start, forward, 0, 100, 0.5, 0);
+	fire_grenade(ent, start, forward, 0, 100, 0.7, 0);
+	fire_grenade(ent, start, forward, 0, 100, 0.9, 0);
+	fire_grenade(ent, start, forward, 0, 100, 1.1, 0);
+	fire_grenade(ent, start, forward, 0, 100, 1.3, 0);
+
+	ent->flags |= FL_NOTARGET;
+	ent->teleport_time = level.time + 5.0;
+
+	for (check = g_edicts + 1; check < &g_edicts[globals.num_edicts]; check++)
+	{
+		if (!check->inuse)
+			continue;
+
+		if (check->enemy == ent && check->monsterinfo.stand)
+		{
+			check->enemy = NULL;
+			check->oldenemy = NULL;
+
+			if (check->monsterinfo.stand) {
+				check->monsterinfo.stand(check);
+			}
+		}
+	}
 
 	gi.WriteByte (svc_muzzleflash);
 	gi.WriteShort (ent-g_edicts);
@@ -1220,6 +1245,9 @@ void weapon_shotgun_fire (edict_t *ent)
 	vec3_t		offset;
 	int			damage = 4;
 	int			kick = 8;
+	//smoke
+	int i;
+	vec3_t dir, point, end;
 
 	if (ent->client->ps.gunframe == 9)
 	{
@@ -1242,15 +1270,37 @@ void weapon_shotgun_fire (edict_t *ent)
 	}
 
 	if (deathmatch->value)
-		fire_shotgun (ent, start, forward, damage, kick, 500, 500, DEFAULT_DEATHMATCH_SHOTGUN_COUNT, MOD_SHOTGUN);
+		fire_shotgun (ent, start, forward, damage, kick, 100, 100, DEFAULT_DEATHMATCH_SHOTGUN_COUNT, MOD_SHOTGUN);
 	else
-		fire_shotgun (ent, start, forward, damage, kick, 500, 500, DEFAULT_SHOTGUN_COUNT, MOD_SHOTGUN);
+		fire_shotgun (ent, start, forward, damage, kick, 100, 100, DEFAULT_SHOTGUN_COUNT, MOD_SHOTGUN);
 
 	// send muzzle flash
 	gi.WriteByte (svc_muzzleflash);
 	gi.WriteShort (ent-g_edicts);
 	gi.WriteByte (MZ_SHOTGUN | is_silenced);
 	gi.multicast (ent->s.origin, MULTICAST_PVS);
+
+	// smoke
+	for (i = 0; i < 50; i++) {
+		dir[0] = forward[0] + crandom() * 0.3;
+		dir[1] = forward[1] + crandom() * 0.3;
+		dir[2] = forward[2] + crandom() * 0.2;
+		VectorNormalize(dir);
+
+		VectorMA(start, 8 + i * 2, forward, point);
+
+		point[0] += crandom() * 4;
+		point[1] += crandom() * 4;
+		point[2] += crandom() * 3;
+
+		VectorMA(point, 12 + random() * 20, dir, end);
+
+		gi.WriteByte(svc_temp_entity);
+		gi.WriteByte(TE_BUBBLETRAIL);
+		gi.WritePosition(point);
+		gi.WritePosition(end);
+		gi.multicast(point, MULTICAST_PVS);
+	}
 
 	ent->client->ps.gunframe++;
 	PlayerNoise(ent, start, PNOISE_WEAPON);
@@ -1274,13 +1324,16 @@ void weapon_supershotgun_fire (edict_t *ent)
 	vec3_t		forward, right;
 	vec3_t		offset;
 	vec3_t		v;
-	int			damage = 6;
-	int			kick = 12;
+	int			damage = 8;
+	int			kick = 20;
+	//smoke
+	int i;
+	vec3_t dir, point, end;
 
 	AngleVectors (ent->client->v_angle, forward, right, NULL);
 
-	VectorScale (forward, -2, ent->client->kick_origin);
-	ent->client->kick_angles[0] = -2;
+	VectorScale (forward, -5, ent->client->kick_origin);
+	ent->client->kick_angles[0] = -3;
 
 	VectorSet(offset, 0, 8,  ent->viewheight-8);
 	P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
@@ -1292,19 +1345,41 @@ void weapon_supershotgun_fire (edict_t *ent)
 	}
 
 	v[PITCH] = ent->client->v_angle[PITCH];
-	v[YAW]   = ent->client->v_angle[YAW] - 5;
+	v[YAW]   = ent->client->v_angle[YAW] - 10;
 	v[ROLL]  = ent->client->v_angle[ROLL];
 	AngleVectors (v, forward, NULL, NULL);
-	fire_shotgun (ent, start, forward, damage, kick, DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD, DEFAULT_SSHOTGUN_COUNT/2, MOD_SSHOTGUN);
+	fire_shotgun (ent, start, forward, damage, kick, DEFAULT_SHOTGUN_HSPREAD * 2, DEFAULT_SHOTGUN_VSPREAD * 2, DEFAULT_SSHOTGUN_COUNT, MOD_SSHOTGUN);
 	v[YAW]   = ent->client->v_angle[YAW] + 5;
 	AngleVectors (v, forward, NULL, NULL);
-	fire_shotgun (ent, start, forward, damage, kick, DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD, DEFAULT_SSHOTGUN_COUNT/2, MOD_SSHOTGUN);
+	fire_shotgun (ent, start, forward, damage / 2, kick / 2, DEFAULT_SHOTGUN_HSPREAD * 0.5, DEFAULT_SHOTGUN_VSPREAD * 0.5, DEFAULT_SSHOTGUN_COUNT/4, MOD_SSHOTGUN);
 
 	// send muzzle flash
 	gi.WriteByte (svc_muzzleflash);
 	gi.WriteShort (ent-g_edicts);
 	gi.WriteByte (MZ_SSHOTGUN | is_silenced);
 	gi.multicast (ent->s.origin, MULTICAST_PVS);
+
+	// smoke
+	for (i = 0; i < 50; i++) {
+		dir[0] = forward[0] + crandom() * 0.3;
+		dir[1] = forward[1] + crandom() * 0.3;
+		dir[2] = forward[2] + crandom() * 0.2;
+		VectorNormalize(dir);
+
+		VectorMA(start, 8 + i * 2, forward, point);
+
+		point[0] += crandom() * 4;
+		point[1] += crandom() * 4;
+		point[2] += crandom() * 3;
+
+		VectorMA(point, 12 + random() * 20, dir, end);
+
+		gi.WriteByte(svc_temp_entity);
+		gi.WriteByte(TE_BUBBLETRAIL);
+		gi.WritePosition(point);
+		gi.WritePosition(end);
+		gi.multicast(point, MULTICAST_PVS);
+	}
 
 	ent->client->ps.gunframe++;
 	PlayerNoise(ent, start, PNOISE_WEAPON);

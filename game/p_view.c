@@ -963,6 +963,11 @@ void ClientEndServerFrame (edict_t *ent)
 	current_player = ent;
 	current_client = ent->client;
 
+	// new stuff for smoke
+	if ((ent->flags & FL_NOTARGET) && (level.time > ent->teleport_time)) {
+		ent->flags &= ~FL_NOTARGET;
+	}
+
 	//
 	// If the origin or velocity have changed since ClientThink(),
 	// update the pmove values.  This will happen when the client
