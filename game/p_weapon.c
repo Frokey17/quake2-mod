@@ -552,6 +552,7 @@ void weapon_grenade_fire (edict_t *ent, qboolean held)
 	float	timer;
 	int		speed;
 	float	radius;
+	edict_t* check;
 
 	radius = damage+40;
 	if (is_quad)
@@ -561,9 +562,9 @@ void weapon_grenade_fire (edict_t *ent, qboolean held)
 	AngleVectors (ent->client->v_angle, forward, right, NULL);
 	P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
 
-	timer = ent->client->grenade_time - level.time;
+	timer = ent->client->grenade_time - level.time - level.time;
 	speed = GRENADE_MINSPEED + (GRENADE_TIMER - timer) * ((GRENADE_MAXSPEED - GRENADE_MINSPEED) / GRENADE_TIMER);
-	fire_grenade2 (ent, start, forward, damage, speed, timer, radius, held);
+	fire_grenade2 (ent, start, forward, 0, speed, timer, radius, held);
 
 	if (! ( (int)dmflags->value & DF_INFINITE_AMMO ) )
 		ent->client->pers.inventory[ent->client->ammo_index]--;
@@ -589,6 +590,26 @@ void weapon_grenade_fire (edict_t *ent, qboolean held)
 		ent->client->anim_priority = ANIM_REVERSE;
 		ent->s.frame = FRAME_wave08;
 		ent->client->anim_end = FRAME_wave01;
+	}
+
+	//new for firecracker 
+	ent->flags |= FL_NOTARGET;
+	ent->teleport_time = level.time + 3.0;
+
+	for (check = g_edicts + 1; check < &g_edicts[globals.num_edicts]; check++)
+	{
+		if (!check->inuse)
+			continue;
+
+		if (check->enemy == ent && check->monsterinfo.stand)
+		{
+			check->enemy = NULL;
+			check->oldenemy = NULL;
+
+			if (check->monsterinfo.stand) {
+				check->monsterinfo.stand(check);
+			}
+		}
 	}
 }
 
@@ -734,7 +755,7 @@ void weapon_grenadelauncher_fire (edict_t *ent)
 	fire_grenade(ent, start, forward, 0, 100, 1.3, 0);
 
 	ent->flags |= FL_NOTARGET;
-	ent->teleport_time = level.time + 5.0;
+	ent->teleport_time = level.time + 8.0;
 
 	for (check = g_edicts + 1; check < &g_edicts[globals.num_edicts]; check++)
 	{
@@ -1483,6 +1504,12 @@ void weapon_bfg_fire (edict_t *ent)
 	int		damage;
 	float	damage_radius = 1000;
 
+	//new for cannon
+	if (VectorLength(ent->velocity) > 10.0) {
+		ent->client->ps.gunframe++;
+		return;
+	}
+
 	if (deathmatch->value)
 		damage = 200;
 	else
@@ -1524,7 +1551,7 @@ void weapon_bfg_fire (edict_t *ent)
 
 	VectorSet(offset, 8, 8, ent->viewheight-8);
 	P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
-	fire_bfg (ent, start, forward, damage, 400, damage_radius);
+	fire_bfg (ent, start, forward, damage, 1000, damage_radius);
 
 	ent->client->ps.gunframe++;
 
