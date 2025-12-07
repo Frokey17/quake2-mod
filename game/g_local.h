@@ -1109,5 +1109,11 @@ struct edict_s
 	// common data blocks
 	moveinfo_t		moveinfo;
 	monsterinfo_t	monsterinfo;
+
+	//new for poison 
+	float		poison_time;
+	float		poison_damage;
+	edict_t* poison_attacker;
+	float		next_poison_tick;
 };
 

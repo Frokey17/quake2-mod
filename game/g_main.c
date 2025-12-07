@@ -355,6 +355,22 @@ void G_RunFrame (void)
 	int		i;
 	edict_t	*ent;
 
+	//new for poison
+	for (ent = g_edicts + 1; ent < &g_edicts[globals.num_edicts]; ent++)
+	{
+		if (!ent->inuse) {
+			continue;
+		}
+		if (ent->poison_time > level.time) {
+			if (level.time >= ent->next_poison_tick) {
+				if (ent->takedamage && ent->health > 0) {
+					T_Damage(ent, ent->poison_attacker, ent->poison_attacker, vec3_origin, ent->s.origin, vec3_origin, ent->poison_damage, 0, 0, MOD_MACHINEGUN);
+				}
+				ent->next_poison_tick = level.time + 1.0;
+			}
+		}
+	}
+
 	level.framenum++;
 	level.time = level.framenum*FRAMETIME;
 

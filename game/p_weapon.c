@@ -922,25 +922,22 @@ void Weapon_Blaster (edict_t *ent)
 }
 
 
-void Weapon_HyperBlaster_Fire (edict_t *ent)
-{
+void Weapon_HyperBlaster_Fire (edict_t *ent){
 	float	rotation;
 	vec3_t	offset;
 	int		effect;
 
 	ent->client->weapon_sound = gi.soundindex("weapons/hyprbl1a.wav");
 
-	if (!(ent->client->buttons & BUTTON_ATTACK))
-	{
+	if (!(ent->client->buttons & BUTTON_ATTACK)){
 		ent->client->ps.gunframe++;
 
 		ent->client->ps.fov = 90;
 	}
-	else
-	{
+	else{
 		ent->client->ps.fov = 30;
 
-		// Animation continues but no firing
+
 		rotation = (ent->client->ps.gunframe - 5) * 2 * M_PI / 6;
 		offset[0] = -4 * sin(rotation);
 		offset[1] = 0;
@@ -996,30 +993,42 @@ MACHINEGUN / CHAINGUN
 ======================================================================
 */
 
+//new for poison
+void fire_poison_bullet(edict_t* self, vec3_t start, vec3_t dir, int damage, int kick, int hspread, int vspread, int mod) {
+
+	fire_bullet(self, start, dir, damage, kick, hspread, vspread, mod);
+	
+	trace_t tr;
+	vec3_t end;
+
+	VectorMA(start, 8192, dir, end);
+	tr = gi.trace(start, NULL, NULL, end, self, MASK_SHOT);
+	if (tr.fraction < 1.0 && tr.ent && tr.ent->takedamage) {
+		tr.ent->poison_time = level.time + 5.0;
+		tr.ent->poison_damage = 10;
+		tr.ent->poison_attacker = self;
+		tr.ent->next_poison_tick = level.time + 1.0;
+	}
+
+}
+
 void Machinegun_Fire (edict_t *ent)
 {
 	int	i;
 	vec3_t		start;
-	vec3_t		forward, right;
+	vec3_t		forward, right, up;
 	vec3_t		angles;
 	int			damage = 8;
 	int			kick = 2;
 	vec3_t		offset;
 
-	if (!(ent->client->buttons & BUTTON_ATTACK))
-	{
+	if (ent->client->ps.gunframe != 4) {
 		ent->client->machinegun_shots = 0;
 		ent->client->ps.gunframe++;
 		return;
 	}
 
-	if (ent->client->ps.gunframe == 5)
-		ent->client->ps.gunframe = 4;
-	else
-		ent->client->ps.gunframe = 5;
-
-	if (ent->client->pers.inventory[ent->client->ammo_index] < 1)
-	{
+	if (ent->client->pers.inventory[ent->client->ammo_index] < 1){
 		ent->client->ps.gunframe = 6;
 		if (level.time >= ent->pain_debounce_time)
 		{
@@ -1053,11 +1062,17 @@ void Machinegun_Fire (edict_t *ent)
 	}
 
 	// get start / end positions
-	VectorAdd (ent->client->v_angle, ent->client->kick_angles, angles);
-	AngleVectors (angles, forward, right, NULL);
-	VectorSet(offset, 0, 8, ent->viewheight-8);
-	P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
-	fire_bullet (ent, start, forward, damage, kick, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD, MOD_MACHINEGUN);
+	AngleVectors (ent->client->v_angle, forward, right, up);
+	VectorSet(offset, 0, 0, ent->viewheight-8);
+
+	VectorCopy(ent->s.origin, start);
+	start[2] += ent->viewheight;
+	VectorMA(start, offset[0], forward, start);
+	VectorMA(start, offset[1], right, start);
+	VectorMA(start, offset[2], up, start);
+	
+	//new for Poisen 
+	fire_poison_bullet (ent, start, forward, damage, kick, 0, 0, MOD_MACHINEGUN);
 
 	gi.WriteByte (svc_muzzleflash);
 	gi.WriteShort (ent-g_edicts);
@@ -1080,12 +1095,13 @@ void Machinegun_Fire (edict_t *ent)
 		ent->s.frame = FRAME_attack1 - (int) (random()+0.25);
 		ent->client->anim_end = FRAME_attack8;
 	}
+	ent->client->ps.gunframe++;
 }
 
 void Weapon_Machinegun (edict_t *ent)
 {
 	static int	pause_frames[]	= {23, 45, 0};
-	static int	fire_frames[]	= {4, 5, 0};
+	static int	fire_frames[]	= {4, 0};
 
 	Weapon_Generic (ent, 3, 5, 45, 49, pause_frames, fire_frames, Machinegun_Fire);
 }
