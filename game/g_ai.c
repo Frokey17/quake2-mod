@@ -781,6 +781,14 @@ qboolean ai_checkattack (edict_t *self, float dist)
 		return false;
 	}
 
+	if (self->enemy && self->enemy->client) {
+
+		if (self->enemy->client->ps.pmove.pm_flags & PMF_DUCKED) {
+			self->monsterinfo.stand(self);
+			return false;
+		}
+	}
+
 // this causes monsters to run blindly to the combat point w/o firing
 	if (self->goalentity)
 	{
