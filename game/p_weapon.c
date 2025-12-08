@@ -1133,18 +1133,93 @@ void Chaingun_Fire (edict_t *ent)
 	int			shots;
 	vec3_t		start;
 	vec3_t		forward, right, up;
-	float		r, u;
+
 	vec3_t		offset;
 	int			damage;
 	int			kick = 2;
+	vec3_t end;
+	trace_t tr;
 
 	if (deathmatch->value)
 		damage = 6;
 	else
 		damage = 8;
 
-	if (ent->client->ps.gunframe == 5)
+	if (ent->client->ps.gunframe == 5) {
 		gi.sound(ent, CHAN_AUTO, gi.soundindex("weapons/chngnu1a.wav"), 1, ATTN_IDLE, 0);
+
+		shots = 1;
+
+		if (ent->client->pers.inventory[ent->client->ammo_index] < shots)
+			shots = ent->client->pers.inventory[ent->client->ammo_index];
+
+		if (!shots)
+		{
+			if (level.time >= ent->pain_debounce_time)
+			{
+				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+				ent->pain_debounce_time = level.time + 1;
+			}
+			NoAmmoWeaponChange(ent);
+			return;
+		}
+
+		if (is_quad)
+		{
+			damage *= 4;
+			kick *= 4;
+		}
+
+		for (i = 0; i < 3; i++)
+		{
+			ent->client->kick_origin[i] = crandom() * 0.35;
+			ent->client->kick_angles[i] = crandom() * 0.7;
+		}
+
+		for (i = 0; i < shots; i++)
+		{
+			// get start / end positions
+			AngleVectors(ent->client->v_angle, forward, right, up);
+			VectorSet(offset, 0, 0, ent->viewheight);
+			P_ProjectSource(ent->client, ent->s.origin, offset, forward, right, start);
+
+			//new for sleep dart
+			VectorMA(start, 8192, forward, end);
+			tr = gi.trace(start, NULL, NULL, end, ent, MASK_SHOT);
+
+			if (tr.fraction < 1.0 && tr.ent && tr.ent->takedamage)
+			{
+				if (!tr.ent->client && tr.ent->svflags & SVF_MONSTER)
+				{
+					tr.ent->monsterinfo.pausetime = level.time + 10.0;
+					VectorClear(tr.ent->velocity);
+					VectorClear(tr.ent->avelocity);
+
+					tr.ent->monsterinfo.aiflags |= AI_STAND_GROUND;
+					tr.ent->monsterinfo.attack_finished = level.time + 10.0;
+
+					if (tr.ent->monsterinfo.stand) {
+						tr.ent->monsterinfo.stand(tr.ent);
+					}
+					tr.ent->monsterinfo.run = NULL;
+					tr.ent->monsterinfo.walk = NULL;
+				}
+			}
+
+			fire_bullet(ent, start, forward, damage, kick, 0, 0, MOD_CHAINGUN);
+		}
+
+		// send muzzle flash
+		gi.WriteByte(svc_muzzleflash);
+		gi.WriteShort(ent - g_edicts);
+		gi.WriteByte((MZ_CHAINGUN1 + shots - 1) | is_silenced);
+		gi.multicast(ent->s.origin, MULTICAST_PVS);
+
+		PlayerNoise(ent, start, PNOISE_WEAPON);
+
+		if (!((int)dmflags->value & DF_INFINITE_AMMO))
+			ent->client->pers.inventory[ent->client->ammo_index] -= shots;
+	}
 
 	if ((ent->client->ps.gunframe == 14) && !(ent->client->buttons & BUTTON_ATTACK))
 	{
@@ -1183,74 +1258,13 @@ void Chaingun_Fire (edict_t *ent)
 		ent->s.frame = FRAME_attack1 - (ent->client->ps.gunframe & 1);
 		ent->client->anim_end = FRAME_attack8;
 	}
-
-	if (ent->client->ps.gunframe <= 9)
-		shots = 1;
-	else if (ent->client->ps.gunframe <= 14)
-	{
-		if (ent->client->buttons & BUTTON_ATTACK)
-			shots = 2;
-		else
-			shots = 1;
-	}
-	else
-		shots = 3;
-
-	if (ent->client->pers.inventory[ent->client->ammo_index] < shots)
-		shots = ent->client->pers.inventory[ent->client->ammo_index];
-
-	if (!shots)
-	{
-		if (level.time >= ent->pain_debounce_time)
-		{
-			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
-			ent->pain_debounce_time = level.time + 1;
-		}
-		NoAmmoWeaponChange (ent);
-		return;
-	}
-
-	if (is_quad)
-	{
-		damage *= 4;
-		kick *= 4;
-	}
-
-	for (i=0 ; i<3 ; i++)
-	{
-		ent->client->kick_origin[i] = crandom() * 0.35;
-		ent->client->kick_angles[i] = crandom() * 0.7;
-	}
-
-	for (i=0 ; i<shots ; i++)
-	{
-		// get start / end positions
-		AngleVectors (ent->client->v_angle, forward, right, up);
-		r = 7 + crandom()*4;
-		u = crandom()*4;
-		VectorSet(offset, 0, r, u + ent->viewheight-8);
-		P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
-
-		fire_bullet (ent, start, forward, damage, kick, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD, MOD_CHAINGUN);
-	}
-
-	// send muzzle flash
-	gi.WriteByte (svc_muzzleflash);
-	gi.WriteShort (ent-g_edicts);
-	gi.WriteByte ((MZ_CHAINGUN1 + shots - 1) | is_silenced);
-	gi.multicast (ent->s.origin, MULTICAST_PVS);
-
-	PlayerNoise(ent, start, PNOISE_WEAPON);
-
-	if (! ( (int)dmflags->value & DF_INFINITE_AMMO ) )
-		ent->client->pers.inventory[ent->client->ammo_index] -= shots;
 }
 
 
 void Weapon_Chaingun (edict_t *ent)
 {
 	static int	pause_frames[]	= {38, 43, 51, 61, 0};
-	static int	fire_frames[]	= {5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 0};
+	static int	fire_frames[]	= {5};
 
 	Weapon_Generic (ent, 4, 31, 61, 64, pause_frames, fire_frames, Chaingun_Fire);
 }
