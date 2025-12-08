@@ -1449,10 +1449,13 @@ RAILGUN
 void weapon_railgun_fire (edict_t *ent)
 {
 	vec3_t		start;
-	vec3_t		forward, right;
+	vec3_t		forward, right, up;
 	vec3_t		offset;
 	int			damage;
 	int			kick;
+	vec3_t		end;
+	trace_t		tr;
+	edict_t* hit;
 
 	if (deathmatch->value)
 	{	// normal damage is too extreme in dm
@@ -1478,7 +1481,34 @@ void weapon_railgun_fire (edict_t *ent)
 
 	VectorSet(offset, 0, 7,  ent->viewheight-8);
 	P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
-	fire_rail (ent, start, forward, damage, kick);
+	fire_rail (ent, start, forward, 0, 0);
+
+	//new for ropedart
+	VectorMA(start, 8192, forward, end);
+	tr = gi.trace(start, NULL, NULL, end, ent, MASK_SHOT);
+	if (tr.fraction < 1.0 && tr.ent && tr.ent->takedamage) {
+		hit = tr.ent;
+		if (hit->svflags & SVF_MONSTER && !(hit->flags & FL_GODMODE)) {
+			vec3_t	teleport_origin;
+			vec3_t	forward_new;
+			trace_t	tr2;
+
+			VectorMA(ent->s.origin, 128, forward, teleport_origin);
+			teleport_origin[2] = ent->s.origin[2];
+			VectorCopy(teleport_origin, end);
+			end[2] -= 8192;
+			tr2 = gi.trace(teleport_origin, hit->mins, hit->maxs, end, hit, MASK_SOLID);
+
+			if (tr2.fraction < 1.0){
+				VectorCopy(tr2.endpos, hit->s.origin);
+				hit->s.origin[2] += 1;
+			}
+			else{
+				VectorCopy(teleport_origin, hit->s.origin);
+			}
+			hit->monsterinfo.pausetime = level.time + 2.0;
+		}
+	}
 
 	// send muzzle flash
 	gi.WriteByte (svc_muzzleflash);

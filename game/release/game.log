@@ -2,5 +2,7 @@
   p_weapon.c
 C:\Users\Freddy_PC\quake2-mod\game\p_weapon.c(862,83): warning C4100: 'effect': unreferenced parameter
 C:\Users\Freddy_PC\quake2-mod\game\p_weapon.c(1041,10): warning C4101: 'angles': unreferenced local variable
+C:\Users\Freddy_PC\quake2-mod\game\p_weapon.c(1452,26): warning C4101: 'up': unreferenced local variable
+C:\Users\Freddy_PC\quake2-mod\game\p_weapon.c(1493,11): warning C4101: 'forward_new': unreferenced local variable
      Creating library .\..\release\gamex86.lib and object .\..\release\gamex86.exp
   game.vcxproj -> C:\Program Files (x86)\Steam\steamapps\common\Quake 2\magic\gamex86.dll
