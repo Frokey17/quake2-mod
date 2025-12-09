@@ -787,6 +787,11 @@ qboolean ai_checkattack (edict_t *self, float dist)
 			self->monsterinfo.stand(self);
 			return false;
 		}
+
+		if (self->enemy->waterlevel > 0) {
+			self->monsterinfo.stand(self);
+			return false;
+		}
 	}
 
 // this causes monsters to run blindly to the combat point w/o firing
