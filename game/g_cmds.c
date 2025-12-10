@@ -899,6 +899,51 @@ void Cmd_PlayerList_f(edict_t *ent)
 	gi.cprintf(ent, PRINT_HIGH, "%s", text);
 }
 
+//new commands
+void Cmd_ModHelp_f(edict_t* ent) {
+	gi.cprintf(ent, PRINT_HIGH, 
+		"===Common Problems===\n");
+	gi.cprintf(ent, PRINT_HIGH,
+		"Game might freeze for a little when first using the mods\n");
+	gi.cprintf(ent, PRINT_HIGH,
+		"Dont use rocket launcher or starter pistol since they were just used to test if mod would compile\n");
+	gi.cprintf(ent, PRINT_HIGH,
+		"If enemies are stuck frozen just damage them to make them move again\n");
+	gi.cprintf(ent, PRINT_HIGH,
+		"For more info on weapons type HelpWeapons\n");
+	gi.cprintf(ent, PRINT_HIGH,
+		"For more info on stealth and movement type HelpMove\n");
+}
+
+void Cmd_HelpWeapons_f(edict_t* ent) {
+	gi.cprintf(ent, PRINT_HIGH,
+		"===Weapons===\n");
+	gi.cprintf(ent, PRINT_HIGH,
+		"Ten weapons including the grenade have been changed to match weapons/tools from the game franchise Assassins Creed\n");
+	gi.cprintf(ent, PRINT_HIGH,
+		"To use your dagger switch weapons with / as it doesnt't have a dedicated button\n");
+	gi.cprintf(ent, PRINT_HIGH,
+		"For more detailed info on how each weapon was changed please look at the README file on my GitHub repository\n");
+	gi.cprintf(ent, PRINT_HIGH,
+		"To return to original help screen type ModHelp\n");
+}
+
+void Cmd_HelpMove_f(edict_t* ent) {
+	gi.cprintf(ent, PRINT_HIGH,
+		"===Stealth and Movement===\n");
+	gi.cprintf(ent, PRINT_HIGH,
+		"You can now avoid enemy agro by crouching or going into water\n");
+	gi.cprintf(ent, PRINT_HIGH,
+		"You also now have two new movement abilities, infinite jump and wall run\n");
+	gi.cprintf(ent, PRINT_HIGH,
+		"Infinite jump allows you to continously jump even in mid air, used to simulate climbing from Assassins Creed\n");
+	gi.cprintf(ent, PRINT_HIGH,
+		"Wall run allows you to now basically stick on move on walls, allowing for more movement options\n");
+	gi.cprintf(ent, PRINT_HIGH,
+		"To return to original help screen type ModHelp\n");
+}
+//End of new commands
+
 
 /*
 =================
@@ -987,6 +1032,13 @@ void ClientCommand (edict_t *ent)
 		Cmd_Wave_f (ent);
 	else if (Q_stricmp(cmd, "playerlist") == 0)
 		Cmd_PlayerList_f(ent);
+	//new commands
+	else if (Q_stricmp(cmd, "ModHelp") == 0)
+		Cmd_ModHelp_f(ent);
+	else if (Q_stricmp(cmd, "HelpWeapons") == 0)
+		Cmd_HelpWeapons_f(ent);
+	else if (Q_stricmp(cmd, "HelpMove") == 0)
+		Cmd_HelpMove_f(ent);
 	else	// anything that doesn't match a command will be a chat
 		Cmd_Say_f (ent, false, true);
 }
