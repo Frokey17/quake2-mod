@@ -1661,6 +1661,21 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 			ent->velocity[2] = 300;
 		}
 
+		if (!pm.groundentity && pm.waterlevel == 0) {
+			trace_t trace;
+			vec3_t check, forward;
+
+			AngleVectors(pm.viewangles, forward, NULL, NULL);
+			VectorMA(ent->s.origin, 36, forward, check);
+			trace = gi.trace(ent->s.origin, ent->mins, ent->maxs, check, ent, MASK_PLAYERSOLID);
+
+			if (trace.fraction < 1.0f && fabs(trace.plane.normal[2]) < 0.7f) {
+				if (ent->velocity[2] < 0) {
+					ent->velocity[2] *= 0.5f;
+				}
+			}
+		}
+
 		ent->viewheight = pm.viewheight;
 		ent->waterlevel = pm.waterlevel;
 		ent->watertype = pm.watertype;
